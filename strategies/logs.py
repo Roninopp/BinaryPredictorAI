@@ -1,7 +1,7 @@
-# Remove the old logs.py file
+# 1. Remove the corrupted logs.py
 rm strategies/logs.py
 
-# Create a new clean logs.py file
+# 2. Create a brand new clean logs.py
 cat > strategies/logs.py << 'EOF'
 import os
 import logging
@@ -295,3 +295,10 @@ def test_logging_system():
 # Run test on import
 test_logging_system()
 EOF
+
+# 3. Verify the file was created properly
+echo "=== CHECKING logs.py CONTENTS ==="
+cat strategies/logs.py | grep -i "commandhandler\|setup_log" || echo "✅ NO COMMANDHANDLER FOUND - FILE IS CLEAN!"
+
+# 4. Run the bot
+python3 ultimate_otc_bot_ENHANCED.py

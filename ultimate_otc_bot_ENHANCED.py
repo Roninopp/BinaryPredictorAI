@@ -608,7 +608,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 *Features:*
 • 🎯 **MULTI-LEVEL SIGNALS** (60%+/70%+)
 • ⏰ **5 TIMEFRAMES** (1m,5m,10m,1h,4h)
-• 💰 **OTC MARKETS (92% RETURNS)**
+• 💰 ** yes OTC MARKETS (92% RETURNS)**
 • 📊 **24/7 MARKET SCANNING**
 • 📁 **REMOTE LOG VIEWING**
 
@@ -654,7 +654,7 @@ async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif command in ['off', 'disable', 'stop']:
             await enhanced_ai.set_auto_trade(False)
             await update.message.reply_text(
-                "🔴 **AUTO-TRADING DISABLED**\n"
+                "😜**AUTO-TRADING DISABLED**\n"
                 "💤 Bot scanning stopped\n"
                 "🔇 No alerts will be sent\n"
                 "💾 RAM usage: MINIMAL",
@@ -808,12 +808,18 @@ def main():
         application.add_handler(CommandHandler("time", show_time))
         
         # Add log handlers if available
-        if LOGS_LOADED:
-            application.add_handler(CommandHandler("logs", handle_logs_command))
-            application.add_handler(CommandHandler("logs_health", handle_logs_health))
-            application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
-            print("📊 Log commands: /logs, /logs_health, /logs_recent")
-        
+if LOGS_LOADED:
+    try:
+        application.add_handler(CommandHandler("logs", handle_logs_command))
+        application.add_handler(CommandHandler("logs_health", handle_logs_health))
+        application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
+        print("📊 Log commands: /logs, /logs_health, /logs_recent")
+    except Exception as e:
+        print(f"❌ Failed to register log commands: {e}")
+        LOGS_LOADED = False
+else:
+    print("❌ Logs module not loaded - log commands disabled")
+    
         print("🤖 BOT ACTIVATED!")
         print("🎯 Confidence Levels: 60%+/70%+")
         print("⏰ Timeframes: 1m, 5m, 10m, 1h, 4h")

@@ -1,7 +1,8 @@
-def generate_medium_confidence_signals(price_action, indicators):
+def generate_medium_confidence_signals(price_action, indicators, closes=None, highs=None, lows=None):
     """
     70% Confidence Level - Two Confirming Signals
     Better accuracy with 2 confirmations
+    Updated parameter format for compatibility
     """
     signals = []
     total_confidence = 0

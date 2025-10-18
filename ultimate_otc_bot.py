@@ -398,7 +398,7 @@ class UltimateAutoTradingAI:
         if self.scanning_task:
             self.scanning_task.cancel()
             self.scanning_task = None
-            logger.info("🛑 Auto-scanning stopped")
+            logger.info("😎 Auto-scanning stopped")
 
     async def set_auto_trade(self, enabled: bool):
         """Enable or disable auto-trading"""

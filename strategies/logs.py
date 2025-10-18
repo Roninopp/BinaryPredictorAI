@@ -1,8 +1,3 @@
-# Remove the corrupted logs.py completely
-rm strategies/logs.py
-
-# Create a simple clean logs.py
-cat > strategies/logs.py << 'EOF'
 import os
 import logging
 from datetime import datetime
@@ -77,13 +72,46 @@ class LogManager:
         except Exception as e:
             return f"Error clearing logs: {e}"
 
+    def get_module_health_report(self):
+        """Enhanced health report for the bot"""
+        try:
+            health_info = "🤖 BOT HEALTH REPORT\n\n"
+            
+            # Check log files
+            for log_file in self.log_files:
+                if os.path.exists(log_file):
+                    size = os.path.getsize(log_file)
+                    health_info += f"✅ {log_file}: {size} bytes\n"
+                else:
+                    health_info += f"❌ {log_file}: NOT FOUND\n"
+            
+            # Add system status
+            health_info += f"\n🕒 System Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            health_info += f"\n📁 Working Dir: {os.getcwd()}"
+            
+            return health_info
+        except Exception as e:
+            return f"Health report error: {e}"
+
+    def get_recent_errors(self, hours=24):
+        """Get recent errors from logs"""
+        try:
+            error_lines = []
+            cutoff_time = datetime.now().timestamp() - (hours * 3600)
+            
+            for log_file in self.log_files:
+                if os.path.exists(log_file):
+                    with open(log_file, 'r', encoding='utf-8', errors='ignore') as file:
+                        for line in file:
+                            if 'ERROR' in line.upper():
+                                # Simple time filter (basic implementation)
+                                error_lines.append(f"{log_file}: {line.strip()}")
+            
+            if not error_lines:
+                return f"No errors found in last {hours} hours"
+            
+            return '\n'.join(error_lines[-20:])  # Last 20 errors
+        except Exception as e:
+            return f"Error fetching recent errors: {e}"
+
 log_manager = LogManager()
-print("✅ Clean logs.py loaded successfully!")
-EOF
-
-# Verify it's clean
-echo "=== CHECKING logs.py ==="
-cat strategies/logs.py | grep -i "commandhandler\|setup_log" || echo "✅ FILE IS CLEAN!"
-
-# Run the bot
-python3 ultimate_otc_bot_ENHANCED.py

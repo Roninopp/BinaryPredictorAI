@@ -1,7 +1,7 @@
-def generate_low_confidence_signals(price_action, indicators):
+def generate_low_confidence_signals(price_action, indicators, closes=None, highs=None, lows=None):
     """
     60% Confidence Level - Simple Single Signals
-    More frequent but lower accuracy
+    Updated to match enhanced parameter format
     """
     signals = []
     total_confidence = 0

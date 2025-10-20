@@ -808,18 +808,17 @@ def main():
         application.add_handler(CommandHandler("time", show_time))
         
         # Add log handlers if available
-if LOGS_LOADED:
-    try:
-        application.add_handler(CommandHandler("logs", handle_logs_command))
-        application.add_handler(CommandHandler("logs_health", handle_logs_health))
-        application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
-        print("📊 Log commands: /logs, /logs_health, /logs_recent")
-    except Exception as e:
-        print(f"❌ Failed to register log commands: {e}")
-        LOGS_LOADED = False
-else:
-    print("❌ Logs module not loaded - log commands disabled")
-    
+        if LOGS_LOADED:
+            try:
+                application.add_handler(CommandHandler("logs", handle_logs_command))
+                application.add_handler(CommandHandler("logs_health", handle_logs_health))
+                application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
+                print("📊 Log commands: /logs, /logs_health, /logs_recent")
+            except Exception as e:
+                print(f"❌ Failed to register log commands: {e}")
+        else:
+            print("❌ Logs module not loaded - log commands disabled")
+        
         print("🤖 BOT ACTIVATED!")
         print("🎯 Confidence Levels: 60%+/70%+")
         print("⏰ Timeframes: 1m, 5m, 10m, 1h, 4h")

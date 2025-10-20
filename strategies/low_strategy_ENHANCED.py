@@ -1,4 +1,4 @@
-    def generate_low_confidence_signals(price_action, indicators, closes=None, highs=None, lows=None):
+def generate_low_confidence_signals(price_action, indicators, closes=None, highs=None, lows=None):
     """
     60% Confidence Level - Simple Single Signals
     Updated to match enhanced parameter format

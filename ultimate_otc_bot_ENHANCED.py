@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import ta
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.constants import ParseMode
 
 print("🚀 STARTING ENHANCED ULTIMATE AUTO-TRADING AI...")
 
@@ -48,9 +49,11 @@ except ImportError as e:
     LOGS_LOADED = False
 
 # Bot configuration
-BOT_TOKEN = "7914882777:AAGv_940utBNry2JXfwbzhtZWxtyK1qMO24"
 UTC_PLUS_7 = timedelta(hours=7)
-YOUR_CHAT_ID = "-1002903475551"
+
+# Prefer environment variables; do not hardcode secrets in code
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+YOUR_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # TRADING PAIRS
 TRADING_PAIRS = {
@@ -377,7 +380,7 @@ class UltimateEnhancedTradingAI:
             await self.application.bot.send_message(
                 chat_id=YOUR_CHAT_ID,
                 text=alert_message,
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             
             logger.info(f"🚨 AUTO-ALERT SENT: {pair} {signal_info['signal']} {signal_info['confidence']}%")
@@ -608,7 +611,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 *Features:*
 • 🎯 **MULTI-LEVEL SIGNALS** (60%+/70%+)
 • ⏰ **5 TIMEFRAMES** (1m,5m,10m,1h,4h)
-• 💰 ** yes OTC MARKETS (92% RETURNS)**
+• 💰 **OTC MARKETS (92% RETURNS)**
 • 📊 **24/7 MARKET SCANNING**
 • 📁 **REMOTE LOG VIEWING**
 
@@ -625,7 +628,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 *Example:* `/analyze AUD/CAD OTC 5m`
     """
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    await update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)
 
 async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Toggle auto-trading on/off"""
@@ -648,17 +651,17 @@ async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🤖 Bot is now scanning 5 timeframes every 30 seconds\n"
                 "🎯 Multi-level signals (60%+/70%+)\n"
                 "💾 RAM usage: ACTIVE",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             
         elif command in ['off', 'disable', 'stop']:
             await enhanced_ai.set_auto_trade(False)
             await update.message.reply_text(
-                "😜**AUTO-TRADING DISABLED**\n"
+                "🔴 **AUTO-TRADING DISABLED**\n"
                 "💤 Bot scanning stopped\n"
                 "🔇 No alerts will be sent\n"
                 "💾 RAM usage: MINIMAL",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
         else:
             await update.message.reply_text("❌ Invalid command. Use: /autotrade on OR /autotrade off")
@@ -673,7 +676,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not context.args or len(context.args) < 2:
             await update.message.reply_text(
                 "📊 *Usage:* /analyze PAIR TIMEFRAME\n*Example:* `/analyze AUD/CAD OTC 5m`",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             return
 
@@ -698,7 +701,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         analyzing_msg = await update.message.reply_text(
             f"🔍 *Analysis: {pair} {timeframe}...*",
-            parse_mode='Markdown'
+            parse_mode=ParseMode.MARKDOWN
         )
 
         # Enhanced analysis
@@ -732,7 +735,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ⏰ *Time (UTC+7):* {enhanced_ai.get_utc7_time().strftime('%H:%M:%S')}
         """
 
-        await analyzing_msg.edit_text(analysis_text, parse_mode='Markdown')
+        await analyzing_msg.edit_text(analysis_text, parse_mode=ParseMode.MARKDOWN)
 
     except Exception as e:
         logger.error(f"Analysis error: {e}")
@@ -750,7 +753,7 @@ async def show_pairs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pairs_text += f"*Timeframes:* {', '.join(TIMEFRAMES)}\n"
         pairs_text += "*Auto-trade:* " + ("🟢 ON" if enhanced_ai.auto_trade_enabled else "🔴 OFF")
         
-        await update.message.reply_text(pairs_text, parse_mode='Markdown')
+        await update.message.reply_text(pairs_text, parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         logger.error(f"Pairs error: {e}")
         await update.message.reply_text("❌ Error fetching pairs")
@@ -774,7 +777,7 @@ async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💾 **RAM USAGE:** {"ACTIVE" if enhanced_ai.auto_trade_enabled else "MINIMAL"}
 💡 **Use /autotrade off to save RAM at night**
         """
-        await update.message.reply_text(status_text, parse_mode='Markdown')
+        await update.message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         logger.error(f"Status error: {e}")
         await update.message.reply_text("❌ Error fetching status")
@@ -784,7 +787,7 @@ async def show_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         current_time = enhanced_ai.get_utc7_time().strftime('%Y-%m-%d %H:%M:%S')
         await update.message.reply_text(f"🕐 **Pocket Option Time (UTC+7):** {current_time}", 
-                                      parse_mode='Markdown')
+                                      parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         logger.error(f"Time error: {e}")
         await update.message.reply_text("❌ Error fetching time")
@@ -808,18 +811,17 @@ def main():
         application.add_handler(CommandHandler("time", show_time))
         
         # Add log handlers if available
-if LOGS_LOADED:
-    try:
-        application.add_handler(CommandHandler("logs", handle_logs_command))
-        application.add_handler(CommandHandler("logs_health", handle_logs_health))
-        application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
-        print("📊 Log commands: /logs, /logs_health, /logs_recent")
-    except Exception as e:
-        print(f"❌ Failed to register log commands: {e}")
-        LOGS_LOADED = False
-else:
-    print("❌ Logs module not loaded - log commands disabled")
-    
+        if LOGS_LOADED:
+            try:
+                application.add_handler(CommandHandler("logs", handle_logs_command))
+                application.add_handler(CommandHandler("logs_health", handle_logs_health))
+                application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
+                print("📊 Log commands: /logs, /logs_health, /logs_recent")
+            except Exception as e:
+                print(f"❌ Failed to register log commands: {e}")
+        else:
+            print("❌ Logs module not loaded - log commands disabled")
+        
         print("🤖 BOT ACTIVATED!")
         print("🎯 Confidence Levels: 60%+/70%+")
         print("⏰ Timeframes: 1m, 5m, 10m, 1h, 4h")

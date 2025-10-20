@@ -40,9 +40,9 @@ except ImportError as e:
         print(f"❌ CRITICAL: No strategies found! {e2}")
         STRATEGIES_LOADED = False
 
-# Bot configuration
-BOT_TOKEN = "7914882777:AAGv_940utBNry2JXfwbzhtZWxtyK1qMO24"
-YOUR_CHAT_ID = "-1002903475551"
+# Bot configuration (env vars preferred)
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+YOUR_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 class SimpleAITradingBot:
     def __init__(self):

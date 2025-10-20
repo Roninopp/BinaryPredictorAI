@@ -7,13 +7,17 @@ from datetime import datetime, timedelta
 import ta
 import asyncio
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import logging
+import os
 
 # ==================== CONFIGURATION ====================
-BOT_TOKEN = "7914882777:AAGv_940utBNry2JXfwbzhtZWxtyK1qMO24"
 UTC_PLUS_7 = timedelta(hours=7)
-YOUR_CHAT_ID = "-1002903475551"  # Your group chat ID
+
+# Prefer environment variables; do not hardcode secrets in code
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+YOUR_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")  # Your group chat ID
 
 # TRADING PAIRS - REGULAR + OTC (92% RETURNS)
 TRADING_PAIRS = {
@@ -38,7 +42,7 @@ class UltimateAutoTradingAI:
         self.application = application
         self.last_signals = {}
         self.alert_cooldown = {}
-        self.auto_trade_enabled = True  # Default enabled
+        self.auto_trade_enabled = False  # Disabled on startup; enable via /autotrade
         self.scanning_task = None
         
     def get_utc7_time(self):
@@ -204,7 +208,7 @@ class UltimateAutoTradingAI:
 
     def generate_medium_confidence_signals(self, price_action, indicators):
         """MEDIUM CONFIDENCE STRATEGY (70%+)"""
-        total_confidence = price_action['confidence_boost'] + indicators['indicator_signals']
+        total_confidence = price_action['confidence_boost'] + indicators['indicator_confidence']
         signal = "HOLD"
         
         # MEDIUM CONFIDENCE RULES
@@ -322,7 +326,7 @@ class UltimateAutoTradingAI:
             await self.application.bot.send_message(
                 chat_id=YOUR_CHAT_ID,
                 text=alert_message,
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             
             logger.info(f"🚨 AUTO-ALERT SENT: {pair} {signal_info['signal']} {signal_info['confidence']}% ({signal_info['confidence_level']})")
@@ -435,7 +439,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 *Example:* `/analyze AUD/CAD OTC 5m`
     """
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    await update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)
 
 async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Toggle auto-trading on/off"""
@@ -445,7 +449,7 @@ async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🔄 *Usage:* /autotrade on OR /autotrade off\n"
                 "*Current Status:* " + 
                 ("🟢 ENABLED" if ultimate_ai.auto_trade_enabled else "🔴 DISABLED"),
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             return
 
@@ -458,7 +462,7 @@ async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🤖 Bot is now scanning 5 timeframes every 30 seconds\n"
                 "🎯 Multi-level signals (60%+/70%+/80%+)\n"
                 "💾 RAM usage: ACTIVE",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             
         elif command in ['off', 'disable', 'stop']:
@@ -468,7 +472,7 @@ async def autotrade_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "💤 Bot scanning stopped\n"
                 "🔇 No alerts will be sent\n"
                 "💾 RAM usage: MINIMAL",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
         else:
             await update.message.reply_text("❌ Invalid command. Use: /autotrade on OR /autotrade off")
@@ -482,7 +486,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not context.args or len(context.args) < 2:
             await update.message.reply_text(
                 "📊 *Usage:* /analyze PAIR TIMEFRAME\n*Example:* `/analyze AUD/CAD OTC 5m`",
-                parse_mode='Markdown'
+                parse_mode=ParseMode.MARKDOWN
             )
             return
 
@@ -499,7 +503,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         analyzing_msg = await update.message.reply_text(
             f"🔍 *Manual Analysis: {pair} {timeframe}...*",
-            parse_mode='Markdown'
+            parse_mode=ParseMode.MARKDOWN
         )
 
         market_data = ultimate_ai.fetch_market_data(pair, timeframe)
@@ -532,7 +536,7 @@ async def analyze_pair(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ⏰ *Time (UTC+7):* {ultimate_ai.get_utc7_time().strftime('%H:%M:%S')}
         """
 
-        await analyzing_msg.edit_text(analysis_text, parse_mode='Markdown')
+        await analyzing_msg.edit_text(analysis_text, parse_mode=ParseMode.MARKDOWN)
 
     except Exception as e:
         await update.message.reply_text("❌ Analysis error. Try again.")
@@ -547,7 +551,7 @@ async def show_pairs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pairs_text += f"*Timeframes:* {', '.join(TIMEFRAMES)}\n"
     pairs_text += "*Auto-trade:* " + ("🟢 ON" if ultimate_ai.auto_trade_enabled else "🔴 OFF")
     
-    await update.message.reply_text(pairs_text, parse_mode='Markdown')
+    await update.message.reply_text(pairs_text, parse_mode=ParseMode.MARKDOWN)
 
 async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_text = f"""
@@ -565,15 +569,20 @@ async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💾 **RAM USAGE:** {"ACTIVE" if ultimate_ai.auto_trade_enabled else "MINIMAL"}
 💡 **Use /autotrade off to save RAM at night**
     """
-    await update.message.reply_text(status_text, parse_mode='Markdown')
+    await update.message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN)
 
 async def show_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_time = ultimate_ai.get_utc7_time().strftime('%Y-%m-%d %H:%M:%S')
     await update.message.reply_text(f"🕐 **Pocket Option Time (UTC+7):** {current_time}", 
-                                  parse_mode='Markdown')
+                                  parse_mode=ParseMode.MARKDOWN)
 
 def main():
     """Start the ultimate auto-trading bot"""
+    if not BOT_TOKEN or not YOUR_CHAT_ID:
+        raise RuntimeError(
+            "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID env vars. Set them before running."
+        )
+
     application = Application.builder().token(BOT_TOKEN).build()
     
     global ultimate_ai

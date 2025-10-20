@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from .ai_enhancements import ai_enhancements
+from ai_enhancements import ai_enhancements
 
 def generate_high_confidence_signals(price_action, indicators, closes, highs, lows, multi_timeframe_data=None):
     """

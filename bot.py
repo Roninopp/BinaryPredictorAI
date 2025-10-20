@@ -23,7 +23,134 @@ class BinaryOptionsBot:
         self.trade_duration = 5  # minutes
         self.trade_amount = 10   # virtual dollars per trade
     
-    # ... [ALL YOUR EXISTING METHODS REMAIN THE SAME] ...
+    def get_market_data(self, symbol):
+        """Get market data for a symbol"""
+        try:
+            # Simulate market data for demo purposes
+            base_prices = {
+                'EURUSD': 1.068, 'GBPUSD': 1.344, 
+                'USDJPY': 159.2, 'XAUUSD': 2415.0
+            }
+            base_price = base_prices.get(symbol, 1.0)
+            
+            # Generate realistic price movement
+            closes = [base_price * (1 + np.random.normal(0, 0.002)) for _ in range(50)]
+            highs = [price * (1 + abs(np.random.normal(0, 0.001))) for price in closes]
+            lows = [price * (1 - abs(np.random.normal(0, 0.001))) for price in closes]
+            opens = [price * (1 + np.random.normal(0, 0.0005)) for price in closes]
+            
+            return {
+                'success': True,
+                'price': closes[-1],
+                'opens': opens, 'highs': highs, 'lows': lows, 'closes': closes,
+                'timestamp': datetime.now()
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def analyze_market(self, symbol):
+        """Analyze market data and generate signals"""
+        try:
+            market_data = self.get_market_data(symbol)
+            if not market_data['success']:
+                return {'success': False, 'error': market_data['error']}
+            
+            # Simple analysis logic
+            closes = market_data['closes']
+            price = market_data['price']
+            
+            # Calculate simple indicators
+            rsi = self.calculate_rsi(closes)
+            ema_9 = self.calculate_ema(closes, 9)
+            ema_21 = self.calculate_ema(closes, 21)
+            
+            # Generate signal
+            signal = "HOLD"
+            confidence = 0
+            
+            if rsi < 30 and ema_9 > ema_21:
+                signal = "CALL"
+                confidence = 75
+            elif rsi > 70 and ema_9 < ema_21:
+                signal = "PUT"
+                confidence = 75
+            elif rsi < 40 and ema_9 > ema_21:
+                signal = "CALL"
+                confidence = 60
+            elif rsi > 60 and ema_9 < ema_21:
+                signal = "PUT"
+                confidence = 60
+            
+            return {
+                'success': True,
+                'signal': signal,
+                'confidence': confidence,
+                'price': price,
+                'rsi': rsi,
+                'ema_9': ema_9,
+                'ema_21': ema_21
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def calculate_rsi(self, closes, period=14):
+        """Calculate RSI indicator"""
+        try:
+            prices = pd.Series(closes)
+            delta = prices.diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            return rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50
+        except:
+            return 50
+    
+    def calculate_ema(self, closes, period):
+        """Calculate EMA indicator"""
+        try:
+            prices = pd.Series(closes)
+            ema = prices.ewm(span=period).mean()
+            return ema.iloc[-1] if not pd.isna(ema.iloc[-1]) else closes[-1]
+        except:
+            return closes[-1] if closes else 1.0
+    
+    def run_single_analysis(self, symbol):
+        """Run analysis for a single symbol"""
+        print(f"\n🔍 Analyzing {symbol}...")
+        
+        analysis = self.analyze_market(symbol)
+        
+        if analysis['success']:
+            print(f"📊 Analysis Results for {symbol}:")
+            print(f"💹 Current Price: ${analysis['price']:.4f}")
+            print(f"📈 Signal: {analysis['signal']}")
+            print(f"🎯 Confidence: {analysis['confidence']}%")
+            print(f"📉 RSI: {analysis['rsi']:.1f}")
+            print(f"📈 EMA 9/21: ${analysis['ema_9']:.4f}/${analysis['ema_21']:.4f}")
+            
+            if analysis['signal'] != "HOLD":
+                print(f"🚨 TRADING SIGNAL: {analysis['signal']} with {analysis['confidence']}% confidence!")
+                print("💡 Consider entering this trade!")
+            else:
+                print("⏳ No clear signal - waiting for better setup")
+        else:
+            print(f"❌ Analysis failed: {analysis['error']}")
+    
+    def show_performance(self):
+        """Show trading performance"""
+        print(f"\n📊 PERFORMANCE SUMMARY")
+        print(f"{'='*40}")
+        print(f"💰 Initial Balance: ${self.initial_balance:.2f}")
+        print(f"💰 Current Balance: ${self.paper_balance:.2f}")
+        print(f"📈 Total Trades: {self.total_trades}")
+        print(f"✅ Winning Trades: {self.winning_trades}")
+        print(f"📊 Win Rate: {self.win_rate:.1f}%")
+        
+        if self.total_trades > 0:
+            profit_loss = self.paper_balance - self.initial_balance
+            print(f"💵 P&L: ${profit_loss:.2f}")
+            print(f"📈 ROI: {(profit_loss/self.initial_balance)*100:.1f}%")
     
     def run_continuous(self):
         """Run continuous trading simulation"""

@@ -21,22 +21,29 @@ sys.path.insert(0, strategies_path)
 
 print(f"📁 Strategies path: {strategies_path}")
 
-# FIXED: Use only original strategies (enhanced ones have errors)
+# Load all available strategies
 try:
     from low_strategy import generate_low_confidence_signals
-    # Skip medium strategy if it doesn't exist
-    try:
-        from medium_strategy import generate_medium_confidence_signals
-        MEDIUM_LOADED = True
-    except ImportError:
-        MEDIUM_LOADED = False
-        print("⚠️  Medium strategy not found, using low only")
+    from medium_strategy import generate_medium_confidence_signals
+    from low_strategy_ENHANCED import generate_low_confidence_signals as generate_low_enhanced
+    from medium_strategy_ENHANCED import generate_medium_confidence_signals as generate_medium_enhanced
+    from high_strategy_ENHANCED import generate_high_confidence_signals
     
     STRATEGIES_LOADED = True
-    print("✅ USING ORIGINAL STRATEGIES")
+    ENHANCED_STRATEGIES_LOADED = True
+    print("✅ ALL STRATEGIES LOADED (Original + Enhanced)")
 except ImportError as e:
-    print(f"❌ Strategy import failed: {e}")
-    STRATEGIES_LOADED = False
+    print(f"❌ Enhanced strategies failed: {e}")
+    try:
+        from low_strategy import generate_low_confidence_signals
+        from medium_strategy import generate_medium_confidence_signals
+        STRATEGIES_LOADED = True
+        ENHANCED_STRATEGIES_LOADED = False
+        print("✅ USING ORIGINAL STRATEGIES ONLY")
+    except ImportError as e2:
+        print(f"❌ CRITICAL: No strategies found! {e2}")
+        STRATEGIES_LOADED = False
+        ENHANCED_STRATEGIES_LOADED = False
 
 # Add logs module
 try:
@@ -297,27 +304,46 @@ class UltimateEnhancedTradingAI:
                     'is_high_confidence': False
                 }
             
-            # FIXED: Use only 2 parameters for original strategies
-            low_signal = generate_low_confidence_signals(price_action, indicators)
-
-            # Only use medium strategy if available
+            # Try enhanced strategies first, fallback to original
+            low_signal = {'action': 'HOLD', 'confidence': 0, 'is_tradable': False}
             medium_signal = {'action': 'HOLD', 'confidence': 0, 'is_tradable': False}
-            if MEDIUM_LOADED:
+            high_signal = {'action': 'HOLD', 'confidence': 0, 'is_tradable': False}
+            
+            if ENHANCED_STRATEGIES_LOADED:
+                try:
+                    # Use enhanced strategies with proper parameters
+                    low_signal = generate_low_enhanced(price_action, indicators, market_data['closes'], market_data['highs'], market_data['lows'])
+                    medium_signal = generate_medium_enhanced(price_action, indicators, market_data['closes'], market_data['highs'], market_data['lows'])
+                    high_signal = generate_high_confidence_signals(price_action, indicators, market_data['closes'], market_data['highs'], market_data['lows'])
+                except Exception as e:
+                    logger.error(f"Enhanced strategies failed: {e}")
+                    # Fallback to original strategies
+                    low_signal = generate_low_confidence_signals(price_action, indicators)
+                    medium_signal = generate_medium_confidence_signals(price_action, indicators)
+            else:
+                # Use original strategies
+                low_signal = generate_low_confidence_signals(price_action, indicators)
                 medium_signal = generate_medium_confidence_signals(price_action, indicators)
             
-            # Priority: MEDIUM > LOW
+            # Priority: HIGH > MEDIUM > LOW
             final_signal = "HOLD"
             final_confidence = 0
             urgency = ""
             confidence_level = "LOW"
             
-            if medium_signal['is_tradable']:
+            if high_signal['is_tradable'] and high_signal['confidence'] >= 80:
+                final_signal = high_signal['action']
+                final_confidence = high_signal['confidence']
+                confidence_level = "🚀 HIGH"
+                urgency = "🚀 ULTIMATE AI SIGNAL - ENTER NOW!"
+                self.performance_stats['high_confidence_signals'] += 1
+            elif medium_signal['is_tradable'] and medium_signal['confidence'] >= 60:
                 final_signal = medium_signal['action']
                 final_confidence = medium_signal['confidence']
                 confidence_level = "⚡ MEDIUM"
                 urgency = "⚡ FAST 2-MINUTE TRADE"
                 self.performance_stats['medium_confidence_signals'] += 1
-            elif low_signal['is_tradable']:
+            elif low_signal['is_tradable'] and low_signal['confidence'] >= 50:
                 final_signal = low_signal['action']
                 final_confidence = low_signal['confidence']
                 confidence_level = "🎯 LOW"
@@ -334,7 +360,8 @@ class UltimateEnhancedTradingAI:
                 'is_high_confidence': final_confidence >= 60,
                 'all_signals': {
                     'low': low_signal,
-                    'medium': medium_signal
+                    'medium': medium_signal,
+                    'high': high_signal
                 }
             }
         except Exception as e:
@@ -808,18 +835,18 @@ def main():
         application.add_handler(CommandHandler("time", show_time))
         
         # Add log handlers if available
-if LOGS_LOADED:
-    try:
-        application.add_handler(CommandHandler("logs", handle_logs_command))
-        application.add_handler(CommandHandler("logs_health", handle_logs_health))
-        application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
-        print("📊 Log commands: /logs, /logs_health, /logs_recent")
-    except Exception as e:
-        print(f"❌ Failed to register log commands: {e}")
-        LOGS_LOADED = False
-else:
-    print("❌ Logs module not loaded - log commands disabled")
-    
+        if LOGS_LOADED:
+            try:
+                application.add_handler(CommandHandler("logs", handle_logs_command))
+                application.add_handler(CommandHandler("logs_health", handle_logs_health))
+                application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
+                print("📊 Log commands: /logs, /logs_health, /logs_recent")
+            except Exception as e:
+                print(f"❌ Failed to register log commands: {e}")
+                LOGS_LOADED = False
+        else:
+            print("❌ Logs module not loaded - log commands disabled")
+        
         print("🤖 BOT ACTIVATED!")
         print("🎯 Confidence Levels: 60%+/70%+")
         print("⏰ Timeframes: 1m, 5m, 10m, 1h, 4h")

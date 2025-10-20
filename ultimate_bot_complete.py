@@ -33,7 +33,7 @@ except ImportError as e:
     MODULES_LOADED = False
 
 # Bot configuration
-BOT_TOKEN = "7914882777:AAGv_940utBNry2JXfwbzhtZWxtyK1qMO24"
+BOT_TOKEN = "6506132532:AAGjfMXlSkefR5uldDwCRhxdk7YRES5385k"
 YOUR_CHAT_ID = "-1002903475551"
 UTC_PLUS_7 = timedelta(hours=7)
 

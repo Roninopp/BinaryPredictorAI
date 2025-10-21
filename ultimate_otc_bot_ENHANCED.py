@@ -793,12 +793,12 @@ def main():
     """Start the enhanced ultimate auto-trading bot"""
     try:
         print("🚀 STARTING ULTIMATE AUTO-TRADING AI...")
-        
+
         application = Application.builder().token(BOT_TOKEN).build()
-        
+
         global enhanced_ai
         enhanced_ai = UltimateEnhancedTradingAI(application)
-        
+
         # Command handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("autotrade", autotrade_toggle))
@@ -806,29 +806,28 @@ def main():
         application.add_handler(CommandHandler("pairs", show_pairs))
         application.add_handler(CommandHandler("status", show_status))
         application.add_handler(CommandHandler("time", show_time))
-        
+
         # Add log handlers if available
-if LOGS_LOADED:
-    try:
-        application.add_handler(CommandHandler("logs", handle_logs_command))
-        application.add_handler(CommandHandler("logs_health", handle_logs_health))
-        application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
-        print("📊 Log commands: /logs, /logs_health, /logs_recent")
-    except Exception as e:
-        print(f"❌ Failed to register log commands: {e}")
-        LOGS_LOADED = False
-else:
-    print("❌ Logs module not loaded - log commands disabled")
-    
+        if LOGS_LOADED:
+            try:
+                application.add_handler(CommandHandler("logs", handle_logs_command))
+                application.add_handler(CommandHandler("logs_health", handle_logs_health))
+                application.add_handler(CommandHandler("logs_recent", handle_logs_recent))
+                print("📊 Log commands: /logs, /logs_health, /logs_recent")
+            except Exception as e:
+                print(f"❌ Failed to register log commands: {e}")
+        else:
+            print("❌ Logs module not loaded - log commands disabled")
+
         print("🤖 BOT ACTIVATED!")
         print("🎯 Confidence Levels: 60%+/70%+")
         print("⏰ Timeframes: 1m, 5m, 10m, 1h, 4h")
         print("💰 OTC Markets focused (92% returns)")
         print("📊 Log module: " + ("ACTIVE" if LOGS_LOADED else "DISABLED"))
         print("🔄 Auto-trade: DISABLED on startup (use /autotrade on)")
-        
+
         application.run_polling()
-        
+
     except Exception as e:
         print(f"❌ CRITICAL ERROR: {e}")
         import traceback

@@ -7,7 +7,6 @@ Quick 1-3 minute trades
 def generate_low_confidence_signals(price_action, indicators):
     """
     60% Confidence Level - Simple Single Signals
-    FIXED: Correct parameter format (only 2 parameters)
     """
     signals = []
     total_confidence = 0
@@ -63,20 +62,6 @@ def generate_low_confidence_signals(price_action, indicators):
         signals.append("NEAR_RESISTANCE")
         reasons.append("Price at Resistance Level")
         total_confidence += 15
-        if action == "HOLD":
-            action = "PUT"
-    
-    # 5. PIN BARS (20 points)
-    if "HAMMER_PINBAR" in price_action['price_signals']:
-        signals.append("HAMMER_PINBAR")
-        reasons.append("Hammer Pin Bar (Bullish Reversal)")
-        total_confidence += 20
-        if action == "HOLD":
-            action = "CALL"
-    elif "SHOOTING_STAR" in price_action['price_signals']:
-        signals.append("SHOOTING_STAR")
-        reasons.append("Shooting Star (Bearish Reversal)")
-        total_confidence += 20
         if action == "HOLD":
             action = "PUT"
     

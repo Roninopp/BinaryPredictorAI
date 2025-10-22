@@ -5,5 +5,4 @@ ta
 python-dateutil>=2.8.0
 python-telegram-bot==20.7
 websocket-client==1.6.3
-ta-lib==0.4.26
 inspect2

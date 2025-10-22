@@ -89,7 +89,7 @@ class UltimateCompleteBot:
                 logger.error(f"Failed to fetch data for {pair}")
                 return None
             
-            logger.info(f"✅ Data source: {market_data.get('data_source', 'UNKNOWN')}")
+            logger.info(f"✅ Data source: {market_data.get('data_source', 'UNKNOWN')} for {pair}")
             return market_data
             
         except Exception as e:
@@ -229,7 +229,6 @@ class UltimateCompleteBot:
                 final_confidence = medium_signal['confidence']
                 strategy_used = "MEDIUM"
                 all_reasons = medium_signal['reasons']
-                self.stats['medium_confidence'] += 1
             elif low_signal['is_tradable'] and low_signal['confidence'] >= 50:
                 final_signal = low_signal['action']
                 final_confidence = low_signal['confidence']
@@ -489,23 +488,29 @@ async def autotrade_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         command = context.args[0].lower()
         
         if command in ['on', 'start', 'enable']:
-            bot_instance.auto_trade_enabled = True
-            await bot_instance.start_auto_scanning()
-            await update.message.reply_text(
-                "🟢 AUTO-TRADING ENABLED\n"
-                "✅ Scanning 12 pairs x 4 timeframes\n"
-                "✅ 30+ pattern detection active\n"
-                "✅ Real-time alerts for 70%+ signals\n"
-                "⏰ Scan interval: 30 seconds"
-            )
+            if not bot_instance.auto_trade_enabled:
+                bot_instance.auto_trade_enabled = True
+                await bot_instance.start_auto_scanning()
+                await update.message.reply_text(
+                    "🟢 AUTO-TRADING ENABLED\n"
+                    "✅ Scanning 12 pairs x 4 timeframes\n"
+                    "✅ 30+ pattern detection active\n"
+                    "✅ Real-time alerts for 70%+ signals\n"
+                    "⏰ Scan interval: 30 seconds"
+                )
+            else:
+                await update.message.reply_text("Auto-trading is already enabled.")
         elif command in ['off', 'stop', 'disable']:
-            bot_instance.auto_trade_enabled = False
-            await bot_instance.stop_auto_scanning()
-            await update.message.reply_text(
-                "🔴 AUTO-TRADING DISABLED\n"
-                "❌ Market scanning stopped\n"
-                "ℹ️ Use /analyze for manual analysis"
-            )
+            if bot_instance.auto_trade_enabled:
+                bot_instance.auto_trade_enabled = False
+                await bot_instance.stop_auto_scanning()
+                await update.message.reply_text(
+                    "🔴 AUTO-TRADING DISABLED\n"
+                    "❌ Market scanning stopped\n"
+                    "ℹ️ Use /analyze for manual analysis"
+                )
+            else:
+                await update.message.reply_text("Auto-trading is already disabled.")
         else:
             await update.message.reply_text("Invalid command. Use: on or off")
             
@@ -537,7 +542,7 @@ async def analyze_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Fetch and analyze
         market_data = bot_instance.fetch_real_market_data(pair, timeframe)
         if not market_data:
-            await analyzing_msg.edit_text("Error fetching market data")
+            await analyzing_msg.edit_text("Error fetching market data. The API might be temporarily unavailable. Please try again.")
             return
         
         indicators = bot_instance.calculate_real_indicators(
@@ -582,7 +587,7 @@ Bullish: {len(patterns['bullish_patterns'])}
 Bearish: {len(patterns['bearish_patterns'])}
 
 TOP REASONS:
-{chr(10).join('- ' + r for r in signal_data['reasons'][:3])}
+{chr(10).join('- ' + r for r in signal_data['reasons'][:3]) if signal_data['reasons'] else 'N/A'}
 
 RISK MANAGEMENT:
 Stop Loss: ${signal_data['risk_management']['stop_loss']:.5f}

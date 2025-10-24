@@ -8,3 +8,5 @@ websocket-client==1.6.3
 inspect2
 python-socketio
 python-engineio
+selenium
+webdriver-manager

@@ -10,22 +10,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
 
-# Configure logging (Corrected line 8)
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- IMPORTANT: Store these securely, NOT directly in the code ---
-# You should use a config file or environment variables later
-YOUR_EMAIL = "vt985761@gmail.com" # Your login email
-YOUR_PASSWORD = "rONIN1122" # Your login password
-# -----------------------------------------------------------------
-
+YOUR_EMAIL = "vt985761@gmail.com"
+YOUR_PASSWORD = "rONIN1122" # Double-check this for typos!
 LOGIN_URL = "https://m.pocketoption.com/en/login/"
 
 def get_pocketoption_token():
-    """
-    Uses Selenium to log into Pocket Option and retrieve the session token/SSID.
-    Returns the token string if successful, None otherwise.
-    """
     token = None
     options = Options()
     options.add_argument("--headless")
@@ -33,9 +25,9 @@ def get_pocketoption_token():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
+    options.add_argument("--window-size=1920,1080") # Set a window size
 
     driver = None
-
     try:
         logging.info("Setting up Chrome WebDriver...")
         service = Service(ChromeDriverManager().install())
@@ -43,17 +35,14 @@ def get_pocketoption_token():
 
         logging.info(f"Navigating to login page: {LOGIN_URL}")
         driver.get(LOGIN_URL)
-
         wait = WebDriverWait(driver, 10)
 
         logging.info("Finding email field...")
         email_field = wait.until(EC.presence_of_element_located((By.NAME, "email")))
-        logging.info("Entering email...")
         email_field.send_keys(YOUR_EMAIL)
 
         logging.info("Finding password field...")
         password_field = wait.until(EC.presence_of_element_located((By.NAME, "password")))
-        logging.info("Entering password...")
         password_field.send_keys(YOUR_PASSWORD)
 
         logging.info("Finding and clicking login button...")
@@ -65,42 +54,39 @@ def get_pocketoption_token():
 
         current_url = driver.current_url
         if "login" in current_url.lower():
-             logging.error("Login failed: Still on login page.")
+             logging.error("Login failed: Still on login page. Taking screenshot...")
+             # --- THIS IS THE NEW LINE ---
+             driver.save_screenshot("login_error.png")
+             logging.info("Screenshot saved as login_error.png")
+             # --------------------------
              return None
 
         logging.info("Login successful. Extracting cookies...")
         cookies = driver.get_cookies()
-
-        # Look for the session token/SSID cookie
         for cookie in cookies:
-            # The cookie name could be 'ssid', 'sessionToken', 'connect.sid', etc.
-            # We will need to verify this by checking the browser after a manual login
-            if cookie['name'] == 'ssid': # Adjust if cookie name is different
+            if cookie['name'] == 'ssid':
                 token = cookie['value']
                 logging.info(f"Found SSID cookie: {token}")
                 break
-
-        if not token:
-             logging.warning("Could not find the 'ssid' cookie after login.")
+        if not token: logging.warning("Could not find the 'ssid' cookie after login.")
 
     except Exception as e:
          logging.error(f"An error occurred: {e}")
-
+         if driver:
+              driver.save_screenshot("unexpected_error.png")
+              logging.info("Screenshot of unexpected error saved.")
     finally:
         if driver:
             logging.info("Closing WebDriver.")
             driver.quit()
-
     return token
 
 if __name__ == "__main__":
     print("Attempting to get Pocket Option token...")
     retrieved_token = get_pocketoption_token()
     if retrieved_token:
-        print("\n-------------------------------------------")
-        print(f"SUCCESS! Retrieved Token: {retrieved_token}")
-        print("-------------------------------------------")
+        print("\n--- SUCCESS! Retrieved Token ---")
+        print(retrieved_token)
+        print("---------------------------------")
     else:
-        print("\n-------------------------------------------")
-        print("FAILED to retrieve token. Check logs for errors.")
-        print("-------------------------------------------")
+        print("\n--- FAILED to retrieve token. Check logs and screenshot. ---")

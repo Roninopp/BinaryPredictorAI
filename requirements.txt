@@ -9,4 +9,5 @@ inspect2
 python-socketio
 python-engineio
 selenium
+selenium
 webdriver-manager
